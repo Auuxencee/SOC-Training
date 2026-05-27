@@ -50,14 +50,22 @@ echo -n "[ 3/5 ] Paramètre vm.max_map_count... "
 docker run --rm --privileged alpine sysctl -w vm.max_map_count=262144 > /dev/null 2>&1
 echo -e "${GREEN}✅ OK (262144)${NC}"
 
-# 4. Lancer les containers
-echo -n "[ 4/5 ] Démarrage des containers Wazuh... "
+# 4. Nettoyer les lock files Wazuh (évite le bug "Another instance is locking")
+echo -n "[ 4/6 ] Nettoyage des lock files Wazuh... "
+MANAGER_CONTAINER=$(docker ps -a --format "{{.Names}}" 2>/dev/null | grep "wazuh.manager" | head -1)
+if [ -n "$MANAGER_CONTAINER" ]; then
+    docker exec "$MANAGER_CONTAINER" find /var/ossec/var/run -type f -delete > /dev/null 2>&1
+fi
+echo -e "${GREEN}✅ OK${NC}"
+
+# 5. Lancer les containers
+echo -n "[ 5/6 ] Démarrage des containers Wazuh... "
 cd "$SOC_DIR"
 docker compose up -d > /dev/null 2>&1
 echo -e "${GREEN}✅ Containers lancés${NC}"
 
-# 5. Attendre que le dashboard soit prêt
-echo -n "[ 5/5 ] Attente du dashboard"
+# 6. Attendre que le dashboard soit prêt
+echo -n "[ 6/6 ] Attente du dashboard"
 for i in {1..24}; do
     sleep 5
     STATUS=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost 2>/dev/null)

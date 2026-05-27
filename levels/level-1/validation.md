@@ -58,16 +58,16 @@ Ce niveau est réussi quand tu peux répondre à toutes ces questions **sans reg
 
 Réponds à ces questions pour valider ta compréhension :
 
-**Q1** : Quelle est la différence entre un IDS et un SIEM ?  
+**Q1** : Quelle est la différence entre un IDS et un SIEM ?
 Réponse : ___________________________________________________________________
 
-**Q2** : Qu'est-ce qu'un "faux positif" et comment le distinguer d'un vrai positif dans le cas du brute force SSH ?  
+**Q2** : Qu'est-ce qu'un "faux positif" et comment le distinguer d'un vrai positif dans le cas du brute force SSH ?
 Réponse : ___________________________________________________________________
 
-**Q3** : Pourquoi le scan de ports est-il plus difficile à détecter que le brute force SSH ?  
+**Q3** : Pourquoi le scan de ports est-il plus difficile à détecter que le brute force SSH ?
 Réponse : ___________________________________________________________________
 
-**Q4** : Quelles informations dois-tu collecter avant de bloquer une IP ?  
+**Q4** : Quelles informations dois-tu collecter avant de bloquer une IP ?
 Réponse : ___________________________________________________________________
 
 ---
@@ -82,7 +82,7 @@ Réponse : ___________________________________________________________________
 | Bonus SOC (3 critères) | 30 | /30 |
 | **Total** | **100 (+30)** | **/100** |
 
-**Seuil de réussite : 60/100**  
+**Seuil de réussite : 60/100**
 **Niveau suivant débloqué à : 80/100**
 
 ---

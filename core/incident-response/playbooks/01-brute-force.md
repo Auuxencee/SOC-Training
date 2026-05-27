@@ -21,7 +21,7 @@
 
 ## Etape 1 — Triage initial (< 5 min)
 
-- [ ] Ouvrir Wazuh → Security Events, filtrer `rule.id: 5763`
+- [ ] Ouvrir Wazuh → Threat Intelligence → Threat Hunting, filtrer `rule.id: 5763`
 - [ ] Identifier l'IP source (`data.srcip`)
 - [ ] Identifier le host cible (`agent.name`)
 - [ ] Compter les tentatives : `data.srcip: <IP>` sur les 30 dernières minutes
@@ -68,12 +68,12 @@ last -n 20
 - [ ] Bloquer l'IP source (choisir l'option adaptée) :
 
 ```bash
-# Option A : blocage via iptables (temporaire, dans le container)
+# Option A : Active Response Wazuh (dans le container)
 docker exec -it single-node-wazuh.manager-1 bash
-iptables -A INPUT -s <IP_ATTAQUANT> -j DROP
+/var/ossec/active-response/bin/firewall-drop.sh add - <IP_ATTAQUANT> 1234 - -
 
-# Option B : Active Response Wazuh (permanent)
-# Activer dans core/config/wazuh-manager.conf → <active-response>
+# Option B : Firewall macOS host
+echo "block drop from <IP_ATTAQUANT> to any" | sudo pfctl -f -
 ```
 
 - [ ] Vérifier que le blocage est effectif (plus d'alertes depuis cette IP)

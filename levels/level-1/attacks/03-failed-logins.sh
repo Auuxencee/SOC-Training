@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # ============================================================
-#  SIMULATION — Echecs d'authentification su/sudo (Niveau 1)
+#  SIMULATION — Echecs sudo/su (Niveau 1)
 #  MITRE ATT&CK : T1548.003 — Sudo and Sudo Caching
 # ============================================================
 #
-#  Ce script simule des tentatives d'escalade de privilèges
-#  échouées (su, sudo) pour générer des alertes Wazuh.
-#
-#  USAGE ÉDUCATIF UNIQUEMENT — Système local uniquement
+#  Injection de logs PAM/sudo dans Wazuh via syslog.
+#  Simule des tentatives d'escalade de privilèges locales.
 # ============================================================
 
-ATTEMPTS=15
-DELAY=1
+WAZUH_IP="127.0.0.1"
+SYSLOG_PORT="514"
+HOSTNAME="workstation-01"
+LOCAL_USER="jdupont"
 
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -25,81 +25,63 @@ echo "============================================================"
 echo -e "  ${RED}[SIMULATION] Echecs d'authentification — Niveau 1${NC}"
 echo "============================================================"
 echo ""
-echo -e "  ${YELLOW}Type${NC}   : Tentatives su / sudo échouées"
-echo -e "  ${YELLOW}MITRE${NC}  : T1548.003 — Sudo and Sudo Caching"
-echo -e "  ${YELLOW}Nombre${NC} : $ATTEMPTS tentatives"
+echo -e "  ${YELLOW}User simulé${NC} : $LOCAL_USER"
+echo -e "  ${YELLOW}Type${NC}        : sudo / su failures (attaque locale)"
+echo -e "  ${YELLOW}MITRE${NC}       : T1548.003 — Sudo and Sudo Caching"
 echo ""
-echo "  Regarde le Wazuh Dashboard pendant la simulation :"
-echo "  → https://localhost → Security Events"
-echo "  → Filtre : rule.groups: authentication_failed"
-echo ""
-echo -e "${CYAN}[*] Démarrage de la simulation...${NC}"
+echo "  → https://localhost → Threat Intelligence → Threat Hunting"
 echo ""
 
-# Tentatives sudo avec mauvais mot de passe
-echo -e "${YELLOW}--- Tentatives SUDO ---${NC}"
-for i in $(seq 1 $((ATTEMPTS / 3))); do
-    printf "  [sudo %02d] Tentative avec mauvais mot de passe → " "$i"
-    # Utilise expect ou echo pipe selon disponibilité
-    echo "wrongpassword123" | sudo -S ls /root 2>&1 | grep -q "incorrect\|wrong\|Sorry" && \
-        echo -e "${RED}ECHEC (attendu)${NC}" || \
-        echo -e "${RED}ECHEC (attendu)${NC}"
-    sleep "$DELAY"
+DATE=$(date '+%b %d %H:%M:%S')
+
+send_syslog() {
+    local MSG="$1"
+    # Priorité 36 = auth facility
+    printf "<36>%s %s %s\n" "$DATE" "$HOSTNAME" "$MSG" | nc -u -w1 "$WAZUH_IP" "$SYSLOG_PORT" 2>/dev/null || \
+    printf "<36>%s %s %s\n" "$DATE" "$HOSTNAME" "$MSG" | nc -w1 "$WAZUH_IP" "$SYSLOG_PORT" 2>/dev/null
+}
+
+echo -e "${CYAN}[*] Simulation tentatives sudo échouées...${NC}"
+echo ""
+
+for i in $(seq 1 8); do
+    printf "  [sudo %02d] %s tente sudo → " "$i" "$LOCAL_USER"
+    send_syslog "sudo: $LOCAL_USER : 3 incorrect password attempts ; TTY=pts/0 ; PWD=/home/$LOCAL_USER ; USER=root ; COMMAND=/bin/bash"
+    send_syslog "sudo: pam_unix(sudo:auth): authentication failure; logname=$LOCAL_USER uid=1001 euid=0 tty=/dev/pts/0 ruser=$LOCAL_USER rhost= user=$LOCAL_USER"
+    echo -e "${RED}échec injecté${NC}"
+    sleep 0.4
 done
 
 echo ""
+echo -e "${CYAN}[*] Simulation tentatives su vers root...${NC}"
+echo ""
 
-# Tentatives su avec utilisateurs inexistants
-echo -e "${YELLOW}--- Tentatives SU (utilisateurs inexistants) ---${NC}"
-FAKE_USERS=("hacker" "backdoor" "sysadmin" "deploy" "jenkins")
+FAKE_USERS=("hacker" "backdoor" "sysadmin" "$LOCAL_USER")
 for USER in "${FAKE_USERS[@]}"; do
-    printf "  [su] Tentative avec user '%-10s' → " "$USER"
-    # su vers un user inexistant génère un log d'échec
-    echo "password" | su - "$USER" 2>&1 | head -1 &>/dev/null
-    echo -e "${RED}ECHEC (attendu)${NC}"
-    sleep 0.8
-done
-
-echo ""
-
-# Tentatives sudo avec utilisateurs différents
-echo -e "${YELLOW}--- Tentatives SUDO répétées (pattern brute force) ---${NC}"
-COMMANDS=("cat /etc/shadow" "cat /etc/passwd" "ls /root" "id" "whoami")
-for i in $(seq 1 $((ATTEMPTS / 3))); do
-    CMD="${COMMANDS[$((RANDOM % ${#COMMANDS[@]}))]}"
-    printf "  [sudo %02d] cmd='%s' → " "$i" "$CMD"
-    echo "wrong_password_$(date +%s%N)" | sudo -S $CMD 2>&1 | grep -q "incorrect\|wrong\|Sorry\|password" && \
-        echo -e "${RED}ECHEC (attendu)${NC}" || \
-        echo -e "${RED}ECHEC (attendu)${NC}"
-    sleep "$DELAY"
+    printf "  [su] %s → root → " "$USER"
+    send_syslog "su: pam_unix(su:auth): authentication failure; logname=$USER uid=1001 euid=0 tty=pts/1 ruser=$USER rhost= user=root"
+    send_syslog "su: FAILED SU (to root) $USER on pts/1"
+    echo -e "${RED}échec injecté${NC}"
+    sleep 0.4
 done
 
 echo ""
 echo "============================================================"
-echo -e "  ${GREEN}Simulation terminée — Echecs d'auth générés${NC}"
+echo -e "  ${GREEN}Logs d'escalade injectés dans Wazuh${NC}"
 echo "============================================================"
 echo ""
-echo "  Maintenant dans Wazuh Dashboard :"
+echo "  Dans Wazuh Dashboard → Threat Hunting :"
 echo ""
-echo -e "  ${CYAN}1. Va dans Security Events${NC}"
-echo "     Filtre : rule.groups: authentication_failed"
-echo "     ou : data.srcuser: root (pour les tentatives sudo)"
+echo -e "  ${CYAN}1. Filtre : rule.groups: authentication_failed${NC}"
+echo "     ou : data.srcuser: $LOCAL_USER"
 echo ""
 echo -e "  ${CYAN}2. Règles attendues :${NC}"
-echo "     → 5401 : Wazuh system audit - sudo event"
-echo "     → 5503 : sudo: authentication failure"
-echo "     → 5551 : su auth failed"
+echo "     → rule.id 5401 : Wazuh system audit - sudo event"
+echo "     → rule.id 5503 : sudo: authentication failure"
+echo "     → rule.id 5551 : su auth failed"
 echo ""
-echo -e "  ${CYAN}3. Questions à te poser :${NC}"
-echo "     → Quelle différence avec le brute force SSH ?"
-echo "     → Qui est le 'srcuser' ici vs dans l'attaque SSH ?"
-echo "     → Est-ce local ou distant ?"
-echo ""
-echo -e "  ${CYAN}4. Différence clé :${NC}"
-echo "     Brute force SSH  = attaque RÉSEAU (depuis une IP externe)"
-echo "     Su/sudo failures = attaque LOCALE (depuis la machine elle-même)"
-echo "     Ce sont 2 patterns d'attaque distincts à surveiller !"
-echo ""
-echo -e "  ${CYAN}5. Ouvre la checklist :${NC}"
-echo "     core/incident-response/ir-checklist.md"
+echo -e "  ${CYAN}3. Différence clé avec le brute force SSH :${NC}"
+echo "     SSH brute force  = attaque RÉSEAU  (IP externe : 192.168.100.50)"
+echo "     sudo/su failures = attaque LOCALE  (user : $LOCAL_USER, pas d'IP source)"
+echo "     → 2 vecteurs d'attaque distincts !"
 echo ""

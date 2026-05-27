@@ -4,24 +4,30 @@
 
 ---
 
+## Comment ça fonctionne
+
+Les scripts **injectent des logs via syslog** (port 514 UDP) directement dans Wazuh.
+Wazuh tourne dans Docker et surveille ses propres logs container — il ne voit pas les logs macOS.
+L'injection syslog est la méthode correcte pour simuler des attaques dans cet environnement.
+
 ## Vue d'ensemble
 
-| Script | Type | Cible | Durée | Objectif |
-|--------|------|-------|-------|----------|
-| `01-ssh-brute-force.sh` | Brute force SSH | localhost:22 | ~30s | Générer des alertes d'auth failures |
-| `02-port-scan.sh` | Scan de ports | localhost | ~15s | Détecter un scan réseau |
-| `03-failed-logins.sh` | Auth failures su/sudo | Local system | ~20s | Détecter escalades échouées |
+| Script | Type | Méthode | Durée | Objectif |
+|--------|------|---------|-------|----------|
+| `01-ssh-brute-force.sh` | Brute force SSH | Syslog UDP 514 | ~15s | Alertes auth failures SSH |
+| `02-port-scan.sh` | Scan de ports | Syslog UDP 514 | ~10s | Logs firewall / scan réseau |
+| `03-failed-logins.sh` | Auth failures su/sudo | Syslog UDP 514 | ~10s | Escalades de privilèges |
 
 ---
 
 ## Prérequis
 
 ```bash
-# Vérifier que nmap est installé (pour l'attaque 2)
-nmap --version
+# nc (netcat) doit être installé — vérifier
+nc -h 2>&1 | head -1
 
 # Installer si nécessaire
-brew install nmap
+brew install netcat
 ```
 
 ---
@@ -59,7 +65,7 @@ bash levels/level-1/attacks/03-failed-logins.sh
 
 ## Après chaque attaque
 
-1. Ouvre Wazuh Dashboard → Security Events
+1. Ouvre Wazuh Dashboard → Threat Intelligence → Threat Hunting
 2. Cherche les alertes générées
 3. Note le `rule.id` et le niveau
 4. Lis le `full_log` pour comprendre l'événement brut

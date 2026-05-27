@@ -19,7 +19,7 @@
   5  : Faible
   7  : Moyen (attention)
   10 : Haute sévérité
-  12 : Critique (déclenche email)
+  12 : Critique (déclenche Active Response notify)
   15 : Maximum
 -->
 
@@ -63,14 +63,117 @@
 
   <!--
     ==============================================
-    NIVEAU 2 — (à venir)
+    NIVEAU 2 — PERSISTENCE & DEFENSE EVASION
     ==============================================
+  -->
+
+  <!-- TODO : Règle pour modification crontab -->
+  <!--
+  <rule id="100010" level="10">
+    <if_matched_sid>550</if_matched_sid>
+    <match>/etc/crontab|/etc/cron</match>
+    <description>Modification de crontab détectée (T1053.003)</description>
+    <group>syscheck,persistence,</group>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!-- TODO : Règle pour création compte + ajout sudo -->
+  <!--
+  <rule id="100011" level="12">
+    <if_matched_sid>5902</if_matched_sid>
+    <match>sudo</match>
+    <description>Nouveau compte ajouté au groupe sudo (T1136.001)</description>
+    <group>account_changed,persistence,</group>
+    <mitre>
+      <id>T1136.001</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!-- TODO : Règle persistence (déclencheur Active Response quarantaine) -->
+  <!--
+  <rule id="100020" level="13">
+    <if_matched_sid>100010,100011</if_matched_sid>
+    <description>Persistence détectée — quarantaine recommandée</description>
+    <group>persistence,active_response,</group>
+  </rule>
   -->
 
   <!--
     ==============================================
-    NIVEAU 3 — (à venir)
+    NIVEAU 3 — LIVING OFF THE LAND & APT
     ==============================================
+  -->
+
+  <!-- TODO : Règle curl/wget vers IP externe -->
+  <!--
+  <rule id="100040" level="10">
+    <match>curl|wget</match>
+    <regex>http://\d+\.\d+\.\d+\.\d+</regex>
+    <description>curl/wget vers IP externe directe (T1059.004)</description>
+    <group>lotl,execution,</group>
+    <mitre>
+      <id>T1059.004</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!-- TODO : Règle base64 + pipe bash -->
+  <!--
+  <rule id="100041" level="12">
+    <match>base64 -d</match>
+    <match>| bash</match>
+    <description>Décodage base64 pipé dans bash (T1140)</description>
+    <group>lotl,deobfuscation,</group>
+    <mitre>
+      <id>T1140</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!-- TODO : Règle accès /etc/shadow -->
+  <!--
+  <rule id="100042" level="13">
+    <match>/etc/shadow</match>
+    <description>Accès à /etc/shadow (credential harvesting)</description>
+    <group>credential_access,</group>
+    <mitre>
+      <id>T1003.008</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!-- TODO : Règle beaconing HTTP répété (nécessite frequency) -->
+  <!--
+  <rule id="100050" level="10" frequency="10" timeframe="120">
+    <if_matched_sid>31103</if_matched_sid>
+    <same_source_ip />
+    <description>Connexions HTTP répétées vers la même IP externe (beaconing)</description>
+    <group>c2,beaconing,</group>
+    <mitre>
+      <id>T1071.001</id>
+    </mitre>
+  </rule>
+  -->
+
+  <!--
+    ==============================================
+    NIVEAU 4 — THREAT INTELLIGENCE (CDB LIST)
+    ==============================================
+  -->
+
+  <!-- TODO : Règle IP dans CDB blacklist -->
+  <!-- Nécessite : <list>etc/lists/blacklist_ips</list> dans ossec.conf -->
+  <!--
+  <rule id="100030" level="15">
+    <if_matched_sid>5763,31103</if_matched_sid>
+    <list field="srcip" lookup="match_key">etc/lists/blacklist_ips</list>
+    <description>IP de la blacklist TI détectée — blocage automatique</description>
+    <group>threat_intel,active_response,</group>
+  </rule>
   -->
 
 </group>

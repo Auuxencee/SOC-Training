@@ -1,0 +1,19 @@
+# CDB List — IPs malveillantes connues
+# Format Wazuh CDB : une IP par ligne, terminée par ":"
+# Mise à jour : voir update-blacklist.sh
+#
+# Sources : IoC des exercices SOC + TI externe
+
+# IPs des exercices (attaquants simulés)
+192.168.100.50:attacker-exercise
+185.220.101.45:c2-server-exercise
+
+# Tor exit nodes (exemples fictifs pour l'exercice)
+185.220.100.240:tor-exit
+185.220.100.241:tor-exit
+185.220.100.242:tor-exit
+
+# IPs scanner SSH courants (exemples)
+43.156.63.71:ssh-scanner
+167.94.138.35:ssh-scanner
+198.235.24.152:ssh-scanner

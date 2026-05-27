@@ -1,0 +1,73 @@
+<!-- ============================================================
+     Active Response — Fragment à ajouter dans ossec.conf
+     Insérer dans le bloc <ossec_config>
+     ============================================================ -->
+
+  <!-- Commandes de réponse automatique -->
+  <command>
+    <name>firewall-drop</name>
+    <executable>firewall-drop.sh</executable>
+    <expect>srcip</expect>
+    <timeout_allowed>yes</timeout_allowed>
+  </command>
+
+  <command>
+    <name>notify-alert</name>
+    <executable>notify-alert.sh</executable>
+    <expect>srcip</expect>
+    <timeout_allowed>no</timeout_allowed>
+  </command>
+
+  <command>
+    <name>quarantine-host</name>
+    <executable>quarantine-host.sh</executable>
+    <expect>srcip</expect>
+    <timeout_allowed>yes</timeout_allowed>
+  </command>
+
+  <!-- --------------------------------------------------------
+       Active Response 1 : Blocage IP sur brute force SSH
+       Déclenché sur : rule.id 5763 (8+ tentatives)
+       Durée : 600 secondes (10 minutes), puis déblocage auto
+       -------------------------------------------------------- -->
+  <active-response>
+    <command>firewall-drop</command>
+    <location>local</location>
+    <rules_id>5763</rules_id>
+    <timeout>600</timeout>
+  </active-response>
+
+  <!-- --------------------------------------------------------
+       Active Response 2 : Notification sur alerte niveau >= 10
+       Déclenché sur : tout événement niveau 10 ou plus
+       -------------------------------------------------------- -->
+  <active-response>
+    <command>notify-alert</command>
+    <location>local</location>
+    <level>10</level>
+    <timeout>0</timeout>
+  </active-response>
+
+  <!-- --------------------------------------------------------
+       Active Response 3 : Blocage sur IP de la CDB blacklist
+       Déclenché sur : rule.id 100030 (IP blacklistée détectée)
+       Durée : 3600 secondes (1 heure)
+       -------------------------------------------------------- -->
+  <active-response>
+    <command>firewall-drop</command>
+    <location>local</location>
+    <rules_id>100030</rules_id>
+    <timeout>3600</timeout>
+  </active-response>
+
+  <!-- --------------------------------------------------------
+       Active Response 4 : Quarantaine sur détection persistance
+       Déclenché sur : rule.id 100020 (persistence détectée)
+       Durée : 0 = permanent jusqu'à révocation manuelle
+       -------------------------------------------------------- -->
+  <active-response>
+    <command>quarantine-host</command>
+    <location>local</location>
+    <rules_id>100020</rules_id>
+    <timeout>0</timeout>
+  </active-response>

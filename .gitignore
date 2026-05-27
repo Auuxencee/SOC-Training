@@ -5,3 +5,5 @@ wazuh-docker/
 *.log
 *.pem
 *.key
+.claude/
+CLAUDE.md

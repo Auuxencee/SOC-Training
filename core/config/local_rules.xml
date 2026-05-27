@@ -1,0 +1,76 @@
+<!--
+  RÈGLES WAZUH CUSTOM — À COMPLÉTER
+  ===================================
+  Ce fichier est ton espace pour écrire des règles de détection personnalisées.
+  Il est chargé après les règles par défaut de Wazuh (ID 0-100000).
+  Tes règles commencent à l'ID 100001.
+
+  Structure d'une règle :
+  <rule id="XXXXX" level="X">
+    <if_matched_sid>ID_RÈGLE_PARENTE</if_matched_sid>
+    <match>motif_à_détecter</match>
+    <description>Description humaine</description>
+    <group>nom_du_groupe</group>
+  </rule>
+
+  Niveaux de sévérité :
+  0  : Ignoré
+  3  : Info
+  5  : Faible
+  7  : Moyen (attention)
+  10 : Haute sévérité
+  12 : Critique (déclenche email)
+  15 : Maximum
+-->
+
+<group name="custom_soc_training,">
+
+  <!--
+    ==============================================
+    NIVEAU 1 — RÈGLES À ÉCRIRE APRÈS L'EXERCICE
+    ==============================================
+  -->
+
+  <!-- TODO : Règle de détection brute force SSH renforcée -->
+  <!--
+  <rule id="100001" level="10">
+    <if_matched_sid>5763</if_matched_sid>
+    <same_source_ip />
+    <description>Brute force SSH détecté — IP suspecte</description>
+    <group>authentication_failures,brute_force,</group>
+  </rule>
+  -->
+
+  <!-- TODO : Règle pour scan de ports (nmap) -->
+  <!--
+  <rule id="100002" level="8">
+    <if_matched_sid>...</if_matched_sid>
+    <match>...</match>
+    <description>Scan de ports détecté</description>
+    <group>network_scan,</group>
+  </rule>
+  -->
+
+  <!-- TODO : Règle pour su/sudo failures répétées -->
+  <!--
+  <rule id="100003" level="9">
+    <if_matched_sid>5503</if_matched_sid>
+    <same_source_ip />
+    <description>Tentatives d'escalade de privilèges répétées</description>
+    <group>privilege_escalation,</group>
+  </rule>
+  -->
+
+  <!--
+    ==============================================
+    NIVEAU 2 — (à venir)
+    ==============================================
+  -->
+
+  <!--
+    ==============================================
+    NIVEAU 3 — (à venir)
+    ==============================================
+  -->
+
+</group>

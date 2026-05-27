@@ -1,0 +1,7 @@
+wazuh-docker/
+*.tar.gz
+*.tar
+.DS_Store
+*.log
+*.pem
+*.key

@@ -50,10 +50,14 @@ echo -n "[ 3/5 ] Paramètre vm.max_map_count... "
 docker run --rm --privileged alpine sysctl -w vm.max_map_count=262144 > /dev/null 2>&1
 echo -e "${GREEN}✅ OK (262144)${NC}"
 
-# 4. Nettoyer les lock files Wazuh (évite le bug "Another instance is locking")
-echo -n "[ 4/6 ] Nettoyage des lock files Wazuh... "
+# 4. Nettoyer processus orphelins et lock files Wazuh
+echo -n "[ 4/6 ] Nettoyage des processus et locks Wazuh... "
 MANAGER_CONTAINER=$(docker ps -a --format "{{.Names}}" 2>/dev/null | grep "wazuh.manager" | head -1)
 if [ -n "$MANAGER_CONTAINER" ]; then
+    # Kill les processus orphelins qui bloquent les ports
+    docker exec "$MANAGER_CONTAINER" pkill -9 -f 'wazuh-remoted\|wazuh-authd\|wazuh-analysisd\|wazuh-db\b\|wazuh-execd\|wazuh-syscheckd\|wazuh-logcollector\|wazuh-monitord\|wazuh-modulesd' > /dev/null 2>&1
+    sleep 1
+    # Supprimer tous les lock/pid files
     docker exec "$MANAGER_CONTAINER" find /var/ossec/var/run -type f -delete > /dev/null 2>&1
 fi
 echo -e "${GREEN}✅ OK${NC}"
